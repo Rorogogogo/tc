@@ -30,6 +30,7 @@ public class Program
         builder.Services.AddDefaultIdentity<ApplicationUserEntity>(options => options.SignIn.RequireConfirmedAccount = true)
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
+        builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
         builder.Services.AddTransient<IEmailSender, EmailSender>();
 
         builder.Services.AddRazorPages();
