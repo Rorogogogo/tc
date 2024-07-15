@@ -9,7 +9,8 @@ using tc.Data;
 using Blazorise;
 using Blazorise.Bootstrap;
 using Blazorise.Icons.FontAwesome;
-
+using tc.Services;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace tc;
 
@@ -26,11 +27,14 @@ public class Program
             options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 28))));
 
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-        builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+        builder.Services.AddDefaultIdentity<ApplicationUserEntity>(options => options.SignIn.RequireConfirmedAccount = true)
             .AddEntityFrameworkStores<ApplicationDbContext>();
+
+        builder.Services.AddTransient<IEmailSender, EmailSender>();
+
         builder.Services.AddRazorPages();
         builder.Services.AddServerSideBlazor();
-        builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
+        builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<ApplicationUserEntity>>();
         builder.Services.AddSingleton<WeatherForecastService>();
         builder.Services
             .AddBlazorise(options =>
@@ -71,6 +75,7 @@ public class Program
             // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
             app.UseHsts();
         }
+
 
         app.UseHttpsRedirection();
 
