@@ -123,10 +123,6 @@ namespace tc.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User created a new account with password.");
 
-                  
-                    var userTypeClaim = new Claim("userType", null);
-                    await _userManager.AddClaimAsync(user, userTypeClaim);
-
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));

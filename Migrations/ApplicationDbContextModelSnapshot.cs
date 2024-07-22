@@ -42,6 +42,20 @@ namespace tc.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ActivityTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("d34adb5f-c990-4781-aacd-608e4ddf7c57"),
+                            ActivityName = "Standard1",
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9800)
+                        },
+                        new
+                        {
+                            Id = new Guid("0f888006-2947-4f22-9d9f-f17aad6edb54"),
+                            ActivityName = "Standard2",
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9810)
+                        });
                 });
 
             modelBuilder.Entity("ApplicationUserEntity", b =>
@@ -58,7 +72,6 @@ namespace tc.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<DateTime>("CreateDate")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("DeleteDate")
@@ -190,6 +203,20 @@ namespace tc.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("694372ec-333b-47ef-be82-b82c9e820d24"),
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = new Guid("f93ed10d-1177-4950-b254-23ebc3e701c7"),
+                            Name = "Standard",
+                            NormalizedName = "STANDARD"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -355,6 +382,104 @@ namespace tc.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Venues");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("794cb96a-5afa-4131-9a46-4fd8cbf06444"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9540),
+                            VenueName = "Venue1"
+                        },
+                        new
+                        {
+                            Id = new Guid("99e7baf5-fa97-4308-a036-089576626994"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9610),
+                            VenueName = "Venue2"
+                        },
+                        new
+                        {
+                            Id = new Guid("689794f5-14b4-4fa5-a134-72156fc65f53"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9620),
+                            VenueName = "Venue3"
+                        },
+                        new
+                        {
+                            Id = new Guid("494d3297-6df1-4408-9809-665f27fb23e2"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9630),
+                            VenueName = "Venue4"
+                        },
+                        new
+                        {
+                            Id = new Guid("8028b2f7-bb5b-443e-9d51-e223bfb00e8f"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9650),
+                            VenueName = "Venue5"
+                        },
+                        new
+                        {
+                            Id = new Guid("ed7342ea-56b4-4784-b773-9cc80efb2b98"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9660),
+                            VenueName = "Venue6"
+                        },
+                        new
+                        {
+                            Id = new Guid("3a29a3c5-2638-41b1-88f2-57317b3ddf62"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9680),
+                            VenueName = "Venue7"
+                        },
+                        new
+                        {
+                            Id = new Guid("7962f9bc-71f5-4359-b147-d086d5eae4c0"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9690),
+                            VenueName = "Venue8"
+                        },
+                        new
+                        {
+                            Id = new Guid("25b8eb4a-f8d6-484f-9fc2-ef7068767997"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9700),
+                            VenueName = "Venue9"
+                        },
+                        new
+                        {
+                            Id = new Guid("062088b9-608c-4079-9e69-ce742f4e7cd3"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9710),
+                            VenueName = "Venue10"
+                        },
+                        new
+                        {
+                            Id = new Guid("f0fe5f13-418b-4e26-bd81-26470f23a0d3"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9730),
+                            VenueName = "Venue11"
+                        },
+                        new
+                        {
+                            Id = new Guid("a12a321a-1aa4-4597-84c8-de933f919dc4"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9740),
+                            VenueName = "Venue12"
+                        },
+                        new
+                        {
+                            Id = new Guid("8b95643e-750a-43b0-9d2e-4f2dc97c31bb"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9750),
+                            VenueName = "Venue13"
+                        },
+                        new
+                        {
+                            Id = new Guid("b2bb739d-78bd-4e72-a1ed-2bcee120ffa7"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9760),
+                            VenueName = "Venue14"
+                        },
+                        new
+                        {
+                            Id = new Guid("c54bc6fd-4f6e-416b-88f0-8ca5260dddee"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9780),
+                            VenueName = "Venue15"
+                        },
+                        new
+                        {
+                            Id = new Guid("5ad60a17-6627-465e-b3bf-c7de9bd12053"),
+                            CreateDate = new DateTime(2024, 7, 22, 14, 14, 19, 208, DateTimeKind.Local).AddTicks(9790),
+                            VenueName = "Venue16"
+                        });
                 });
 
             modelBuilder.Entity("AppointmentEntity", b =>
