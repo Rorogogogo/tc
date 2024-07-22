@@ -5,7 +5,7 @@ using tc.Data.Base;
 
 public class VenueEntity:BaseEntity
 {
-    public string Name { get; set; }
+    public string VenueName { get; set; }
 
     public VenueEntity()
     {

@@ -81,7 +81,7 @@
 
     void OnAppointmentRender(SchedulerAppointmentRenderEventArgs<AppointmentEntity> args)
     {
-        if (args.Data.status == "deleted")
+        if (args.Data.Status == "deleted")
         {
             args.Attributes["style"] = "background-color: red;";
         }

@@ -5,11 +5,11 @@ using tc.Data.Base;
 
 public class VenueActivitySetupEntity : BaseEntity
 {
-    public Guid venueId { get; set; }
-    public Guid userId { get; set; }
-    public string scene { get; set; }
-    public int onSceneOffset { get; set; }
-    public int offSceneOffset { get; set; }
+    public Guid VenueId { get; set; }
+    public Guid UserId { get; set; }
+    public string Scene { get; set; }
+    public int OnSceneOffset { get; set; }
+    public int OffSceneOffset { get; set; }
 
 
     public VenueActivitySetupEntity()

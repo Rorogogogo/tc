@@ -5,7 +5,7 @@ using tc.Data.Base;
 
 public class ActivityTypeEntity:BaseEntity
 {
-    public string activityName { get; set; }
+    public string ActivityName { get; set; }
 
 
     public ActivityTypeEntity()

@@ -1,0 +1,179 @@
+﻿@page "/user_management"
+@using tc.Data
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Globalization
+
+@inject UserManager<ApplicationUserEntity> UserManager
+@inject RoleManager<IdentityRole<Guid>> RoleManager // Use IdentityRole<Guid>
+@inject ApplicationDbContext DbContext
+@inject NavigationManager Navigation
+
+
+@attribute [Authorize(Roles = "Admin")]
+<h3>User Management</h3>
+
+@if (users == null)
+{
+    <p>Loading...</p>
+}
+else if (!users.Any())
+{
+    <p>No users found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>UserName</th>
+                <th>Email</th>
+                <th>Email Confirmed</th>
+                <th>Role</th>
+                <th>Create Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                var role = userRoles.ContainsKey(user.Id.ToString()) ? userRoles[user.Id.ToString()] : "null";
+                <tr>
+                    <td>@user.UserName</td>
+                    <td>@user.Email</td>
+                    <td>@user.EmailConfirmed</td>
+                    <td>@role</td>
+                    <td>@user.CreateDate.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</td>
+                    <td>
+                        @if (role != "Admin")
+                        {
+                            <button class="btn btn-primary" @onclick="() => EditUser(user)">Edit</button>
+                            <button class="btn btn-danger" @onclick="() => ConfirmDelete(user)">Delete</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (isEditModalVisible)
+{
+    <EditForm Model="editingUser" OnValidSubmit="HandleEditUser">
+        <DataAnnotationsValidator />
+        <div class="modal show d-block" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit User</h5>
+                        <button type="button" class="btn-close" @onclick="() => isEditModalVisible = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="UserName" class="form-label">UserName</label>
+                            <InputText id="UserName" class="form-control" @bind-Value="editingUser.UserName" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="Email" class="form-label">Email</label>
+                            <InputText id="Email" class="form-control" @bind-Value="editingUser.Email" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="Role" class="form-label">Role</label>
+                            <InputText id="Role" class="form-control" @bind-Value="editingRole" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="() => isEditModalVisible = false">Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@if (isDeleteModalVisible)
+{
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" @onclick="() => isDeleteModalVisible = false"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this user?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => isDeleteModalVisible = false">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="HandleDeleteUser">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ApplicationUserEntity> users;
+    private Dictionary<string, string> userRoles = new();
+    private ApplicationUserEntity editingUser;
+    private string editingRole;
+    private bool isEditModalVisible = false;
+    private bool isDeleteModalVisible = false;
+    private ApplicationUserEntity deletingUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        users = await DbContext.Users
+            .Where(u => u.DeleteDate == null)
+            .ToListAsync();
+
+        foreach (var user in users)
+        {
+            var roles = await UserManager.GetRolesAsync(user);
+            userRoles[user.Id.ToString()] = roles.FirstOrDefault() ?? "null";
+        }
+    }
+
+    private void EditUser(ApplicationUserEntity user)
+    {
+        editingUser = user;
+        editingRole = userRoles[user.Id.ToString()];
+        isEditModalVisible = true;
+    }
+
+    private async Task HandleEditUser()
+    {
+        var currentRole = userRoles[editingUser.Id.ToString()];
+        if (currentRole != editingRole)
+        {
+            if (!string.IsNullOrEmpty(currentRole))
+            {
+                await UserManager.RemoveFromRoleAsync(editingUser, currentRole);
+            }
+            if (!string.IsNullOrEmpty(editingRole))
+            {
+                await UserManager.AddToRoleAsync(editingUser, editingRole);
+            }
+        }
+
+        await UserManager.UpdateAsync(editingUser);
+        isEditModalVisible = false;
+        Navigation.NavigateTo("/user_management", forceLoad: true); // Reload the page to reflect changes
+    }
+
+    private void ConfirmDelete(ApplicationUserEntity user)
+    {
+        deletingUser = user;
+        isDeleteModalVisible = true;
+    }
+
+    private async Task HandleDeleteUser()
+    {
+        deletingUser.DeleteDate = DateTime.UtcNow.AddHours(10); // Sydney time is UTC+10
+        await UserManager.UpdateAsync(deletingUser);
+        isDeleteModalVisible = false;
+        Navigation.NavigateTo("/user_management", forceLoad: true); // Reload the page to reflect changes
+    }
+}

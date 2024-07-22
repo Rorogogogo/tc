@@ -1,13 +1,8 @@
 ﻿<AuthorizeView>
     <Authorized>
         <a href="Identity/Account/Manage">Hello, @context.User.Identity?.Name!</a>
-        <a href="MicrosoftIdentity/Account/SignOut">Log out</a>
-
         <form method="post" action="/Identity/Account/Logout" onsubmit="return confirm('Are you sure you want to log out?');">
             <button type="submit" class="nav-link btn btn-link">Log out</button>
-        </form>
-        <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" method="post">
-            <button type="submit" class="nav-link btn btn-link text-dark">Click here to Logout</button>
         </form>
     </Authorized>
     <NotAuthorized>

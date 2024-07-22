@@ -1,0 +1,75 @@
+﻿@page "/all_appointment"
+@using tc.Data
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Globalization
+
+@inject ApplicationDbContext DbContext
+
+@attribute [Authorize(Roles = "Admin")]
+<h3>Appointment Management</h3>
+
+@if (appointments == null)
+{
+    <p>Loading...</p>
+}
+else if (!appointments.Any())
+{
+    <p>No appointments found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Venue</th>
+                <th>Activity Type</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Create Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var appointment in appointments)
+            {
+                var user = users.FirstOrDefault(u => u.Id == appointment.UserId);
+                var activityType = activityTypes.FirstOrDefault(a => a.Id == appointment.ActivityTypeId);
+                var venue = venues.FirstOrDefault(a => a.Id == appointment.VenueId);
+                <tr>
+                    <td>@user?.UserName</td>
+                    <td>@venue?.VenueName</td>
+                    <td>@activityType?.ActivityName</td>
+                    <td>@appointment.StartTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</td>
+                    <td>@appointment.EndTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</td>
+                    <td>@appointment.CreateDate.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<AppointmentEntity> appointments;
+    private List<ApplicationUserEntity> users;
+    private List<ActivityTypeEntity> activityTypes;
+    private List<VenueEntity> venues;
+
+    protected override async Task OnInitializedAsync()
+    {
+        appointments = await DbContext.Appointments
+            .Where(a => a.DeleteDate == null)
+            .ToListAsync();
+
+        users = await DbContext.Users
+            .ToListAsync();
+
+        activityTypes = await DbContext.ActivityTypes
+            .ToListAsync();
+
+        venues = await DbContext.Venues
+            .ToListAsync();
+    }
+
+    // Other methods if needed...
+}

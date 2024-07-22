@@ -1,8 +1,14 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Identity;
 
 
-public class ApplicationUserEntity : IdentityUser
+public class ApplicationUserEntity : IdentityUser<Guid>
 {
-    public string? userType { get; set; }
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public DateTime CreateDate { get; set; } = DateTime.Now;
+
+    public DateTime? EditDate { get; set; }
+
+    public DateTime? DeleteDate { get; set; }
 
 }
