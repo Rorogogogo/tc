@@ -158,10 +158,13 @@ else
             }
         }
 
-        await UserManager.UpdateAsync(editingUser);
+        DbContext.Update(editingUser);
+        await DbContext.SaveChangesAsync(); // Save changes to database
+
         isEditModalVisible = false;
         Navigation.NavigateTo("/user_management", forceLoad: true); // Reload the page to reflect changes
     }
+
 
     private void ConfirmDelete(ApplicationUserEntity user)
     {
@@ -172,8 +175,13 @@ else
     private async Task HandleDeleteUser()
     {
         deletingUser.DeleteDate = DateTime.UtcNow.AddHours(10); // Sydney time is UTC+10
-        await UserManager.UpdateAsync(deletingUser);
+
+        // Update user details
+        DbContext.Update(deletingUser);
+        await DbContext.SaveChangesAsync(); // Save changes to database
+
         isDeleteModalVisible = false;
         Navigation.NavigateTo("/user_management", forceLoad: true); // Reload the page to reflect changes
     }
+
 }
