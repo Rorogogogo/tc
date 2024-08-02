@@ -18,7 +18,16 @@ public class Program
 {
     public static void Main(string[] args)
     {
+
         var builder = WebApplication.CreateBuilder(args);
+        //builder.WebHost.ConfigureKestrel(serverOptions =>
+        //{
+        //    serverOptions.ListenAnyIP(80); // HTTP
+        //    serverOptions.ListenAnyIP(443, listenOptions =>
+        //    {
+        //        listenOptions.UseHttps("/etc/letsencrypt/live/tenniscourtcentre.net/certificate.pfx", "tenniscourt");
+        //    });
+        //});
 
         // Add services to the container.
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

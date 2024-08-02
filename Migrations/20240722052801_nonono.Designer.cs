@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using tc.Data;
 
@@ -10,9 +11,11 @@ using tc.Data;
 namespace tc.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240722052801_nonono")]
+    partial class nonono
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -46,15 +49,15 @@ namespace tc.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("6f47efed-1d4e-4196-aeeb-c69a05dc693b"),
+                            Id = new Guid("03b5e89b-1764-4344-9349-b83cdd36abe1"),
                             ActivityName = "Standard1",
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1920)
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7870)
                         },
                         new
                         {
-                            Id = new Guid("5e907643-1b38-48fa-8eb0-e1686c025947"),
+                            Id = new Guid("78daa19b-cc85-46f5-bfbf-0d1b66284894"),
                             ActivityName = "Standard2",
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1920)
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7870)
                         });
                 });
 
@@ -208,13 +211,13 @@ namespace tc.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("c7e9509d-1345-477d-ba3f-64fd5f22db64"),
+                            Id = new Guid("072f2403-a36b-4447-b426-8b52f2f5687a"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("03609fd3-32a1-4aad-ba34-3f5b8ccbf7bc"),
+                            Id = new Guid("85370869-4360-4991-8afc-b32b68cebc8b"),
                             Name = "Standard",
                             NormalizedName = "STANDARD"
                         });
@@ -240,6 +243,59 @@ namespace tc.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser<System.Guid>", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("IdentityUser<Guid>");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
@@ -387,98 +443,98 @@ namespace tc.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("960c65a6-af65-4fd8-8251-ef8ae040fbd8"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1660),
+                            Id = new Guid("0960e4fa-2a36-4b58-a78c-f1bc1c66cf32"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7620),
                             VenueName = "Venue1"
                         },
                         new
                         {
-                            Id = new Guid("f0ca534e-4bf2-41f6-8720-a964f079f3cf"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1720),
+                            Id = new Guid("815c6494-bf27-40e7-82d4-046e12e9ddbd"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7680),
                             VenueName = "Venue2"
                         },
                         new
                         {
-                            Id = new Guid("bbd81d4a-5042-4a26-9451-a44d099a35d3"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1740),
+                            Id = new Guid("4031db9f-41b5-4c30-9df1-698406f56e40"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7690),
                             VenueName = "Venue3"
                         },
                         new
                         {
-                            Id = new Guid("44dae368-bf84-4c59-a334-67214fdd54c5"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1750),
+                            Id = new Guid("134ec962-bb04-4546-9fa8-77966ffca2da"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7710),
                             VenueName = "Venue4"
                         },
                         new
                         {
-                            Id = new Guid("ae6b6c4e-9f96-4238-9e40-bf1a34d86d3f"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1760),
+                            Id = new Guid("9a5bdafc-6778-4910-b9f6-29c53fdeebb5"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7720),
                             VenueName = "Venue5"
                         },
                         new
                         {
-                            Id = new Guid("fac43fc2-c23b-481d-8a35-bd8af895b7ee"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1780),
+                            Id = new Guid("35794e73-94f4-4b69-92f3-8e434d34b00d"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7730),
                             VenueName = "Venue6"
                         },
                         new
                         {
-                            Id = new Guid("47e5c39d-fe80-42e8-bc4a-2c5273c54784"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1790),
+                            Id = new Guid("5d7ed12b-9dbc-4a8b-9a92-cf24bb3f2e88"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7750),
                             VenueName = "Venue7"
                         },
                         new
                         {
-                            Id = new Guid("27052b7c-585c-4423-bb92-8ae721fecf36"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1800),
+                            Id = new Guid("87f4d30a-0b18-41d9-ae2b-e5a98f10ce30"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7760),
                             VenueName = "Venue8"
                         },
                         new
                         {
-                            Id = new Guid("9e477352-e487-4148-b0be-195793d497d2"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1810),
+                            Id = new Guid("544d9edc-b466-424d-a03f-4bc0135e249b"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7770),
                             VenueName = "Venue9"
                         },
                         new
                         {
-                            Id = new Guid("d80f47d7-0f14-4360-b776-1362124c96ae"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1820),
+                            Id = new Guid("5991f537-42aa-4618-8542-057a7d50eab4"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7780),
                             VenueName = "Venue10"
                         },
                         new
                         {
-                            Id = new Guid("d0d37d81-906a-40cd-9bf6-ed141c92966d"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1840),
+                            Id = new Guid("1ee34391-d7e5-405d-a7a5-219321f60d1f"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7800),
                             VenueName = "Venue11"
                         },
                         new
                         {
-                            Id = new Guid("be959c01-4b40-40e0-b969-c961d1193614"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1850),
+                            Id = new Guid("91548182-355b-4190-8023-4fae056a1e7b"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7810),
                             VenueName = "Venue12"
                         },
                         new
                         {
-                            Id = new Guid("8223cb24-26b8-44e9-b5fc-3509a64af6bb"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1860),
+                            Id = new Guid("e004dc2e-4370-4528-8efa-8bb397754db8"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7820),
                             VenueName = "Venue13"
                         },
                         new
                         {
-                            Id = new Guid("df043272-4df0-4bb1-9687-50adfdb9bba5"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1880),
+                            Id = new Guid("53e2562f-6404-4904-85c9-dfdd6252aece"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7830),
                             VenueName = "Venue14"
                         },
                         new
                         {
-                            Id = new Guid("5ec2aa7a-c2d6-4d11-8b63-702d635d2555"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1890),
+                            Id = new Guid("fcc4e1f5-833b-4af6-8d1f-14b508bd3153"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7840),
                             VenueName = "Venue15"
                         },
                         new
                         {
-                            Id = new Guid("b1539c49-9eb0-4ab5-9ad0-0ab2e6d92685"),
-                            CreateDate = new DateTime(2024, 8, 1, 15, 1, 56, 479, DateTimeKind.Local).AddTicks(1900),
+                            Id = new Guid("9b34a4af-8511-4bb9-8edd-d6be424ba7c9"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 28, 1, 152, DateTimeKind.Local).AddTicks(7850),
                             VenueName = "Venue16"
                         });
                 });
@@ -546,6 +602,12 @@ namespace tc.Migrations
                         .IsRequired();
 
                     b.HasOne("ApplicationUserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser<System.Guid>", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

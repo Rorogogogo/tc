@@ -11,8 +11,8 @@ using tc.Data;
 namespace tc.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240721123241_roles")]
-    partial class roles
+    [Migration("20240722050144_Initia")]
+    partial class Initia
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -28,7 +28,11 @@ namespace tc.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("CreatedDate")
+                    b.Property<string>("ActivityName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreateDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)");
 
@@ -38,19 +42,30 @@ namespace tc.Migrations
                     b.Property<DateTime?>("EditDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("activityName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.HasKey("Id");
 
-                    b.ToTable("ActivityType");
+                    b.ToTable("ActivityTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("c4e7d93c-0ece-4610-bda6-1a82c2a21158"),
+                            ActivityName = "Standard1",
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3530)
+                        },
+                        new
+                        {
+                            Id = new Guid("0312c77a-2558-45a0-a081-3786243a18b7"),
+                            ActivityName = "Standard2",
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3540)
+                        });
                 });
 
             modelBuilder.Entity("ApplicationUserEntity", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
@@ -59,7 +74,7 @@ namespace tc.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("CreatedDate")
+                    b.Property<DateTime>("CreateDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)");
 
@@ -109,9 +124,6 @@ namespace tc.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
 
-                    b.Property<string>("userType")
-                        .HasColumnType("longtext");
-
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
@@ -130,7 +142,10 @@ namespace tc.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("CreatedDate")
+                    b.Property<Guid>("ActivityTypeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreateDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)");
 
@@ -140,37 +155,38 @@ namespace tc.Migrations
                     b.Property<DateTime?>("EditDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid>("activityTypeId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("courtId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("endTime")
+                    b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime>("startTime")
+                    b.Property<DateTime>("StartTime")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("status")
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("type")
-                        .HasColumnType("int");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
 
-                    b.Property<Guid>("userId")
+                    b.Property<Guid>("VenueId")
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ActivityTypeId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("VenueId");
+
                     b.ToTable("Appointments");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -191,9 +207,23 @@ namespace tc.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("1f261c82-bbab-4dc9-b394-915e18dbf581"),
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = new Guid("6aee5453-b064-4760-b0d9-47bade609c82"),
+                            Name = "Standard",
+                            NormalizedName = "STANDARD"
+                        });
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -205,9 +235,8 @@ namespace tc.Migrations
                     b.Property<string>("ClaimValue")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("RoleId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -216,7 +245,7 @@ namespace tc.Migrations
                     b.ToTable("AspNetRoleClaims", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -228,9 +257,8 @@ namespace tc.Migrations
                     b.Property<string>("ClaimValue")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -239,7 +267,7 @@ namespace tc.Migrations
                     b.ToTable("AspNetUserClaims", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
                     b.Property<string>("LoginProvider")
                         .HasMaxLength(128)
@@ -252,9 +280,8 @@ namespace tc.Migrations
                     b.Property<string>("ProviderDisplayName")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("LoginProvider", "ProviderKey");
 
@@ -263,13 +290,13 @@ namespace tc.Migrations
                     b.ToTable("AspNetUserLogins", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
                 {
-                    b.Property<string>("UserId")
-                        .HasColumnType("varchar(255)");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
 
-                    b.Property<string>("RoleId")
-                        .HasColumnType("varchar(255)");
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("UserId", "RoleId");
 
@@ -278,10 +305,10 @@ namespace tc.Migrations
                     b.ToTable("AspNetUserRoles", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.Property<string>("UserId")
-                        .HasColumnType("varchar(255)");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("LoginProvider")
                         .HasMaxLength(128)
@@ -305,7 +332,7 @@ namespace tc.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("CreatedDate")
+                    b.Property<DateTime>("CreateDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)");
 
@@ -315,20 +342,20 @@ namespace tc.Migrations
                     b.Property<DateTime?>("EditDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("offSceneOffset")
+                    b.Property<int>("OffSceneOffset")
                         .HasColumnType("int");
 
-                    b.Property<int>("onSceneOffset")
+                    b.Property<int>("OnSceneOffset")
                         .HasColumnType("int");
 
-                    b.Property<string>("scene")
+                    b.Property<string>("Scene")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<Guid>("userId")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid>("venueId")
+                    b.Property<Guid>("VenueId")
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
@@ -342,7 +369,7 @@ namespace tc.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("CreatedDate")
+                    b.Property<DateTime>("CreateDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)");
 
@@ -352,25 +379,150 @@ namespace tc.Migrations
                     b.Property<DateTime?>("EditDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("VenueName")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
                     b.ToTable("Venues");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("4b491c29-b94b-4902-8545-9114bb2646e1"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3270),
+                            VenueName = "Venue1"
+                        },
+                        new
+                        {
+                            Id = new Guid("79a898bc-b18b-475b-9042-50d03753ac53"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3330),
+                            VenueName = "Venue2"
+                        },
+                        new
+                        {
+                            Id = new Guid("eb945727-d571-4128-a72f-0593a5f8d94f"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3350),
+                            VenueName = "Venue3"
+                        },
+                        new
+                        {
+                            Id = new Guid("2dfd9366-ef76-4186-af0f-b345a0d3f35c"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3360),
+                            VenueName = "Venue4"
+                        },
+                        new
+                        {
+                            Id = new Guid("ea861fad-16c1-46c3-ae2b-f98bb77d5278"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3370),
+                            VenueName = "Venue5"
+                        },
+                        new
+                        {
+                            Id = new Guid("07e17499-b6fb-45a4-9a40-5075222c773a"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3390),
+                            VenueName = "Venue6"
+                        },
+                        new
+                        {
+                            Id = new Guid("98608c7e-9593-4113-93b9-4f11f9170e0e"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3400),
+                            VenueName = "Venue7"
+                        },
+                        new
+                        {
+                            Id = new Guid("27623715-3646-4941-9ce8-40bfd1761158"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3410),
+                            VenueName = "Venue8"
+                        },
+                        new
+                        {
+                            Id = new Guid("04b3fa98-69c6-4434-b487-4b671242f7c1"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3420),
+                            VenueName = "Venue9"
+                        },
+                        new
+                        {
+                            Id = new Guid("87737ae3-860f-4f14-95a4-db29ddab5b3b"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3450),
+                            VenueName = "Venue10"
+                        },
+                        new
+                        {
+                            Id = new Guid("f56aa909-4da5-4390-a5d0-79c74f017397"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3460),
+                            VenueName = "Venue11"
+                        },
+                        new
+                        {
+                            Id = new Guid("e571e407-d989-444a-8dd4-d1f25df6443a"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3470),
+                            VenueName = "Venue12"
+                        },
+                        new
+                        {
+                            Id = new Guid("e59debe1-f332-4f16-a051-8157d266c2ee"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3490),
+                            VenueName = "Venue13"
+                        },
+                        new
+                        {
+                            Id = new Guid("ee604752-61d2-49ac-a06d-87c6397cf25c"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3500),
+                            VenueName = "Venue14"
+                        },
+                        new
+                        {
+                            Id = new Guid("b60b7146-bdbe-483e-80fd-bc24a2b9dcc7"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3510),
+                            VenueName = "Venue15"
+                        },
+                        new
+                        {
+                            Id = new Guid("8a08edd5-576a-4bb3-a652-590cc3e5ad7f"),
+                            CreateDate = new DateTime(2024, 7, 22, 15, 1, 44, 299, DateTimeKind.Local).AddTicks(3520),
+                            VenueName = "Venue16"
+                        });
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+            modelBuilder.Entity("AppointmentEntity", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                    b.HasOne("ActivityTypeEntity", "ActivityType")
+                        .WithMany()
+                        .HasForeignKey("ActivityTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ApplicationUserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VenueEntity", "Venue")
+                        .WithMany()
+                        .HasForeignKey("VenueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ActivityType");
+
+                    b.Navigation("User");
+
+                    b.Navigation("Venue");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
                     b.HasOne("ApplicationUserEntity", null)
                         .WithMany()
@@ -379,7 +531,7 @@ namespace tc.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
                     b.HasOne("ApplicationUserEntity", null)
                         .WithMany()
@@ -388,9 +540,9 @@ namespace tc.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -403,7 +555,7 @@ namespace tc.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
                     b.HasOne("ApplicationUserEntity", null)
                         .WithMany()
