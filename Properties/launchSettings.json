@@ -15,8 +15,8 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "hotReloadEnabled": true,
-      "dotnetRunMessages": true
+      "dotnetRunMessages": true,
+      "hotReloadEnabled": true
     },
     "https": {
       "commandName": "Project",
@@ -26,8 +26,8 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "hotReloadProfile": "aspnetcore",
-      "hotReloadEnabled": true,
-      "dotnetRunMessages": true
+      "dotnetRunMessages": true,
+      "hotReloadEnabled": true
     },
     "IIS Express": {
       "commandName": "IISExpress",

@@ -1,54 +1,54 @@
 ﻿@page "/my_appointment"
+@using Radzen
+@using Radzen.Blazor
 @using tc.Data
-@using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.Forms
 @using System.Globalization
+@using System.Security.Claims
 
-@inject UserManager<ApplicationUserEntity> UserManager
-@inject RoleManager<IdentityRole<Guid>> RoleManager // Use IdentityRole<Guid>
 @inject ApplicationDbContext DbContext
-@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
-<h3>User Management</h3>
+<h3>My Appointments</h3>
 
-@if (users == null)
+@if (appointments == null)
 {
     <p>Loading...</p>
 }
-else if (!users.Any())
+else if (!appointments.Any())
 {
-    <p>No users found.</p>
+    <p>No appointments found.</p>
 }
 else
 {
     <table class="table">
         <thead>
             <tr>
-                <th>UserName</th>
-                <th>Email</th>
-                <th>Email Confirmed</th>
-                <th>Role</th>
+                <th>Venue</th>
+                <th>Activity Type</th>
+                <th>Start Time</th>
+                <th>End Time</th>
                 <th>Create Date</th>
+                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var user in users)
+            @foreach (var appointment in appointments)
             {
-                var role = userRoles.ContainsKey(user.Id.ToString()) ? userRoles[user.Id.ToString()] : "null";
+                var activityType = activityTypes.FirstOrDefault(a => a.Id == appointment.ActivityTypeId);
+                var venue = venues.FirstOrDefault(a => a.Id == appointment.VenueId);
                 <tr>
-                    <td>@user.UserName</td>
-                    <td>@user.Email</td>
-                    <td>@user.EmailConfirmed</td>
-                    <td>@role</td>
-                    <td>@user.CreateDate.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</td>
+                    <td>@venue?.VenueName</td>
+                    <td>@activityType?.ActivityName</td>
+                    <td>@appointment.StartTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</td>
+                    <td>@appointment.EndTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</td>
+                    <td>@appointment.CreateDate.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</td>
+                    <td>@appointment.Status</td>
                     <td>
-                        @if (role != "Admin")
-                        {
-                            <button class="btn btn-primary" @onclick="() => EditUser(user)">Edit</button>
-                            <button class="btn btn-danger" @onclick="() => ConfirmDelete(user)">Delete</button>
-                        }
+                        <button class="btn btn-primary" @onclick="() => EditAppointment(appointment)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => ConfirmDelete(appointment)">Delete</button>
                     </td>
                 </tr>
             }
@@ -58,28 +58,72 @@ else
 
 @if (isEditModalVisible)
 {
-    <EditForm Model="editingUser" OnValidSubmit="HandleEditUser">
+    <EditForm Model="editingAppointment" OnValidSubmit="HandleEditAppointment">
         <DataAnnotationsValidator />
         <div class="modal show d-block" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Edit User</h5>
+                        <h5 class="modal-title">Edit Appointment</h5>
                         <button type="button" class="btn-close" @onclick="() => isEditModalVisible = false"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="UserName" class="form-label">UserName</label>
-                            <InputText id="UserName" class="form-control" @bind-Value="editingUser.UserName" />
+                            <label for="Venue" class="form-label">Venue</label>
+                            <InputSelect id="Venue" class="form-control" @bind-Value="editingAppointment.VenueId">
+                                @foreach (var venue in venues)
+                                {
+                                    <option value="@venue.Id">@venue.VenueName</option>
+                                }
+                            </InputSelect>
                         </div>
                         <div class="mb-3">
-                            <label for="Email" class="form-label">Email</label>
-                            <InputText id="Email" class="form-control" @bind-Value="editingUser.Email" />
+                            <label for="ActivityType" class="form-label">Activity Type</label>
+                            <InputSelect id="ActivityType" class="form-control" @bind-Value="editingAppointment.ActivityTypeId">
+                                @foreach (var activityType in activityTypes)
+                                {
+                                    <option value="@activityType.Id">@activityType.ActivityName</option>
+                                }
+                            </InputSelect>
                         </div>
                         <div class="mb-3">
-                            <label for="Role" class="form-label">Role</label>
-                            <InputText id="Role" class="form-control" @bind-Value="editingRole" />
+                            <label for="Date" class="form-label">Date</label>
+                            <RadzenDatePicker @bind-Value="editingAppointmentDate"
+                                              Style="width: 100%;"
+                                              DateFormat="yyyy-MM-dd"
+                                              ShowTime="false" />
                         </div>
+                        <div class="mb-3">
+                            <label for="StartTime" class="form-label">Start Time</label>
+                            <RadzenDatePicker @bind-Value="editingAppointmentStartTime"
+                                              DateFormat="HH:mm"
+                                              TimeOnly="true"
+                                              ShowTime="true"
+                                              ShowDate="false"
+                                              HourFormat="24"
+                                              Style="width: 100%;" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="EndTime" class="form-label">End Time</label>
+                            <RadzenDatePicker @bind-Value="editingAppointmentEndTime"
+                                              DateFormat="HH:mm"
+                                              TimeOnly="true"
+                                              ShowTime="true"
+                                              ShowDate="false"
+                                              HourFormat="24"
+                                              Style="width: 100%;" />
+                        </div>
+                        @if (validationErrors.Count > 0)
+                        {
+                            <div class="alert alert-danger">
+                                <ul>
+                                    @foreach (var error in validationErrors)
+                                    {
+                                        <li>@error</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @onclick="() => isEditModalVisible = false">Close</button>
@@ -101,11 +145,11 @@ else
                     <button type="button" class="btn-close" @onclick="() => isDeleteModalVisible = false"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Are you sure you want to delete this user?</p>
+                    <p>@deleteMessage</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="() => isDeleteModalVisible = false">Cancel</button>
-                    <button type="button" class="btn btn-danger" @onclick="HandleDeleteUser">Delete</button>
+                    <button type="button" class="btn btn-danger" @onclick="HandleDeleteAppointment">Delete</button>
                 </div>
             </div>
         </div>
@@ -113,65 +157,139 @@ else
 }
 
 @code {
-    private List<ApplicationUserEntity> users;
-    private Dictionary<string, string> userRoles = new();
-    private ApplicationUserEntity editingUser;
-    private string editingRole;
+    private List<AppointmentEntity> appointments;
+    private List<ActivityTypeEntity> activityTypes;
+    private List<VenueEntity> venues;
+    private AppointmentEntity editingAppointment;
     private bool isEditModalVisible = false;
     private bool isDeleteModalVisible = false;
-    private ApplicationUserEntity deletingUser;
+    private AppointmentEntity deletingAppointment;
+    private List<string> validationErrors = new List<string>();
+    private string deleteMessage;
+    private string currentUserId;
+
+    private DateTime editingAppointmentDate = DateTime.Today;
+    private DateTime editingAppointmentStartTime = DateTime.Today;
+    private DateTime editingAppointmentEndTime = DateTime.Today;
 
     protected override async Task OnInitializedAsync()
     {
-        users = await DbContext.Users
-            .Where(u => u.DeleteDate == null)
-            .ToListAsync();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
 
-        foreach (var user in users)
+        if (user.Identity.IsAuthenticated)
         {
-            var roles = await UserManager.GetRolesAsync(user);
-            userRoles[user.Id.ToString()] = roles.FirstOrDefault() ?? "null";
+            currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            await LoadData();
+        }
+        else
+        {
+            appointments = new List<AppointmentEntity>();
         }
     }
 
-    private void EditUser(ApplicationUserEntity user)
+    private async Task LoadData()
     {
-        editingUser = user;
-        editingRole = userRoles[user.Id.ToString()];
+        appointments = await DbContext.Appointments
+            .Where(a => a.UserId == Guid.Parse(currentUserId) && a.DeleteDate == null)
+            .OrderBy(a => a.Status)
+            .ThenBy(a => a.CreateDate)
+            .ToListAsync();
+
+        activityTypes = await DbContext.ActivityTypes
+            .OrderBy(a => a.ActivityName)
+            .ThenBy(a => a.Id)
+            .ToListAsync();
+
+        venues = await DbContext.Venues
+            .OrderBy(v => v.VenueName)
+            .ThenBy(v => v.Id)
+            .ToListAsync();
+    }
+
+
+    private void EditAppointment(AppointmentEntity appointment)
+    {
+        editingAppointment = appointment;
+        editingAppointmentDate = appointment.StartTime.Date;
+        editingAppointmentStartTime = appointment.StartTime;
+        editingAppointmentEndTime = appointment.EndTime;
+        validationErrors.Clear();
         isEditModalVisible = true;
     }
 
-    private async Task HandleEditUser()
+    private async Task HandleEditAppointment()
     {
-        var currentRole = userRoles[editingUser.Id.ToString()];
-        if (currentRole != editingRole)
+        validationErrors.Clear();
+
+        if (editingAppointmentEndTime < editingAppointmentStartTime)
         {
-            if (!string.IsNullOrEmpty(currentRole))
-            {
-                await UserManager.RemoveFromRoleAsync(editingUser, currentRole);
-            }
-            if (!string.IsNullOrEmpty(editingRole))
-            {
-                await UserManager.AddToRoleAsync(editingUser, editingRole);
-            }
+            validationErrors.Add("End Time cannot be earlier than Start Time.");
+            return;
         }
 
-        await UserManager.UpdateAsync(editingUser);
+        // Combine the date and time
+        editingAppointment.StartTime = new DateTime(
+            editingAppointmentDate.Year, editingAppointmentDate.Month, editingAppointmentDate.Day,
+            editingAppointmentStartTime.Hour, editingAppointmentStartTime.Minute, 0);
+
+        editingAppointment.EndTime = new DateTime(
+            editingAppointmentDate.Year, editingAppointmentDate.Month, editingAppointmentDate.Day,
+            editingAppointmentEndTime.Hour, editingAppointmentEndTime.Minute, 0);
+
+        // Check for overlapping appointments
+        var overlappingAppointment = appointments.FirstOrDefault(a =>
+            a.VenueId == editingAppointment.VenueId &&
+            a.Id != editingAppointment.Id &&
+            ((editingAppointment.StartTime >= a.StartTime && editingAppointment.StartTime < a.EndTime) ||
+             (editingAppointment.EndTime > a.StartTime && editingAppointment.EndTime <= a.EndTime))
+        );
+
+        if (overlappingAppointment != null)
+        {
+            validationErrors.Add("The selected time overlaps with another appointment.");
+            return;
+        }
+
+        editingAppointment.Status = "reserved";
+        DbContext.Appointments.Update(editingAppointment);
+        await DbContext.SaveChangesAsync();
+
+        await LoadData();
         isEditModalVisible = false;
-        Navigation.NavigateTo("/user_management", forceLoad: true); // Reload the page to reflect changes
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Summary = "Appointment Updated",
+            Detail = "Your appointment has been successfully updated.",
+            Duration = 4000
+        });
     }
 
-    private void ConfirmDelete(ApplicationUserEntity user)
+    private void ConfirmDelete(AppointmentEntity appointment)
     {
-        deletingUser = user;
+        deletingAppointment = appointment;
+        deleteMessage = $"Are you sure you want to delete the appointment for {appointment.StartTime.ToString("yyyy-MM-dd HH:mm")}?";
         isDeleteModalVisible = true;
     }
 
-    private async Task HandleDeleteUser()
+    private async Task HandleDeleteAppointment()
     {
-        deletingUser.DeleteDate = DateTime.UtcNow.AddHours(10); // Sydney time is UTC+10
-        await UserManager.UpdateAsync(deletingUser);
-        isDeleteModalVisible = false;
-        Navigation.NavigateTo("/user_management", forceLoad: true); // Reload the page to reflect changes
+        if (deletingAppointment != null)
+        {
+            deletingAppointment.DeleteDate = DateTime.Now;
+            DbContext.Appointments.Update(deletingAppointment);
+            await DbContext.SaveChangesAsync();
+            await LoadData();
+            isDeleteModalVisible = false;
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Appointment Deleted",
+                Detail = "Your appointment has been successfully deleted.",
+                Duration = 4000
+            });
+        }
     }
+
 }

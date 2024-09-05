@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace tc.Areas.Identity.Pages.Account
@@ -73,6 +74,8 @@ namespace tc.Areas.Identity.Pages.Account
             [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
+            public DateTime? DeleteDate { get; set; }
+
         }
 
         public async Task OnGetAsync(string returnUrl = null)
@@ -85,28 +88,29 @@ namespace tc.Areas.Identity.Pages.Account
         {
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
             if (ModelState.IsValid)
             {
-                var user = CreateUser();
+                var existingUser = await _userManager.Users
+                    .FirstOrDefaultAsync(u => u.Email == Input.Email && u.DeleteDate != null);
 
-                await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-                var result = await _userManager.CreateAsync(user, Input.Password);
-
-                if (result.Succeeded)
+                if (existingUser != null)
                 {
-                    _logger.LogInformation("User created a new account with password.");
+                    existingUser.DeleteDate = null;
+                    existingUser.EmailConfirmed = false;
+                    var updateResult = await _userManager.UpdateAsync(existingUser);
 
-                    // Assign the "Standard" role to the user
-                    var roleExists = await _roleManager.RoleExistsAsync("Standard");
-                    if (!roleExists)
+                    if (!updateResult.Succeeded)
                     {
-                        await _roleManager.CreateAsync(new IdentityRole<Guid>("Standard"));
+                        foreach (var error in updateResult.Errors)
+                        {
+                            ModelState.AddModelError(string.Empty, error.Description);
+                        }
+                        return Page();
                     }
-                    await _userManager.AddToRoleAsync(user, "Standard");
 
-                    var userId = await _userManager.GetUserIdAsync(user);
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                    var userId = await _userManager.GetUserIdAsync(existingUser);
+                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(existingUser);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                     var callbackUrl = Url.Page(
                         "/Account/ConfirmEmail",
@@ -123,19 +127,63 @@ namespace tc.Areas.Identity.Pages.Account
                     }
                     else
                     {
-                        await _signInManager.SignInAsync(user, isPersistent: false);
+                        await _signInManager.SignInAsync(existingUser, isPersistent: false);
                         return LocalRedirect(returnUrl);
                     }
                 }
-                foreach (var error in result.Errors)
+                else
                 {
-                    ModelState.AddModelError(string.Empty, error.Description);
+                    var newUser = CreateUser();
+                    await _userStore.SetUserNameAsync(newUser, Input.Email, CancellationToken.None);
+                    await _emailStore.SetEmailAsync(newUser, Input.Email, CancellationToken.None);
+                    var result = await _userManager.CreateAsync(newUser, Input.Password);
+
+                    if (result.Succeeded)
+                    {
+                        _logger.LogInformation("User created a new account with password.");
+
+                        var roleExists = await _roleManager.RoleExistsAsync("Standard");
+                        if (!roleExists)
+                        {
+                            await _roleManager.CreateAsync(new IdentityRole<Guid>("Standard"));
+                        }
+                        await _userManager.AddToRoleAsync(newUser, "Standard");
+
+                        var userId = await _userManager.GetUserIdAsync(newUser);
+                        var code = await _userManager.GenerateEmailConfirmationTokenAsync(newUser);
+                        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                        var callbackUrl = Url.Page(
+                            "/Account/ConfirmEmail",
+                            pageHandler: null,
+                            values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
+                            protocol: Request.Scheme);
+
+                        await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+
+                        if (_userManager.Options.SignIn.RequireConfirmedAccount)
+                        {
+                            return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
+                        }
+                        else
+                        {
+                            await _signInManager.SignInAsync(newUser, isPersistent: false);
+                            return LocalRedirect(returnUrl);
+                        }
+                    }
+
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
                 }
             }
 
-            // If we got this far, something failed, redisplay form
             return Page();
         }
+
+
+
 
         private ApplicationUserEntity CreateUser()
         {

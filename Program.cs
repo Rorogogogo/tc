@@ -11,6 +11,7 @@ using Blazorise.Bootstrap;
 using Blazorise.Icons.FontAwesome;
 using tc.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Radzen;
 
 namespace tc;
 
@@ -47,6 +48,8 @@ public class Program
         builder.Services.AddServerSideBlazor();
         builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<ApplicationUserEntity>>();
         builder.Services.AddSingleton<WeatherForecastService>();
+        builder.Services.AddScoped<NotificationService>();
+
         builder.Services
             .AddBlazorise(options =>
             {

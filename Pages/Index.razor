@@ -1,9 +1,149 @@
 ﻿@page "/"
+@using System.Globalization
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.EntityFrameworkCore
+@using tc.Data
+@using Radzen
 
-<PageTitle>Index</PageTitle>
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
 
-<h1>Morning!</h1>
 
-Welcome to xx tennis court.
+    <PageTitle>Welcome to Robert's tennis court</PageTitle>
+    <AuthorizeView>
 
+        <Authorized>
+            @if (!string.IsNullOrEmpty(nextAppointmentMessage))
+            {
+                <div>
+                    <p>@nextAppointmentMessage</p>
+                    @if (lastAppointment != null)
+                    {
+                        if (DateTime.Now >= lastAppointment.StartTime && DateTime.Now <= lastAppointment.EndTime)
+                        {
+                            if (lastAppointment.Status == "reserved")
+                            {
+                                <button class="btn btn-primary" @onclick="StartSession">Start My Session</button>
+                            }
+                            else if (lastAppointment.Status == "ongoing")
+                            {
+                                <button class="btn btn-danger" @onclick="EndSession">End Now</button>
+                            }
+                        }
+                    }
 
+                </div>
+            }
+            else
+            {
+                <p>Your do not have any appointment.</p>
+            }
+
+            @code {
+                private AppointmentEntity lastAppointment;
+                private string nextAppointmentMessage;
+
+                protected override async Task OnInitializedAsync()
+                {
+                    await LoadAppointmentDataAsync();
+                }
+
+                private async Task LoadAppointmentDataAsync()
+                {
+                    var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                    var user = authState.User;
+
+                    if (user.Identity.IsAuthenticated)
+                    {
+                        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                        lastAppointment = await DbContext.Appointments
+                            .Where(a => a.UserId == Guid.Parse(userId) && a.DeleteDate == null)
+                            .OrderByDescending(a => a.StartTime)
+                            .FirstOrDefaultAsync();
+
+                        if (lastAppointment != null)
+                        {
+                            if (lastAppointment.Status == "completed")
+                            {
+                                nextAppointmentMessage = "Your last appointment has ended.";
+                            }
+                            else if (DateTime.Now < lastAppointment.StartTime)
+                            {
+                                var timeToStart = lastAppointment.StartTime - DateTime.Now;
+                                var days = timeToStart.Days;
+                                var hours = timeToStart.Hours;
+                                var minutes = timeToStart.Minutes;
+                                var seconds = timeToStart.Seconds;
+
+                                nextAppointmentMessage = $"Your next appointment is in {days} days, {hours} hours, {minutes} minutes, {seconds} seconds.";
+                            }
+                            else if (DateTime.Now >= lastAppointment.StartTime && DateTime.Now <= lastAppointment.EndTime)
+                            {
+                                if (lastAppointment.Status == "reserved")
+                                {
+                                    nextAppointmentMessage = "Please click the button to start your session.";
+                                }
+                                else if (lastAppointment.Status == "ongoing")
+                                {
+                                    var timeToEnd = lastAppointment.EndTime - DateTime.Now;
+                                    var days = timeToEnd.Days;
+                                    var hours = timeToEnd.Hours;
+                                    var minutes = timeToEnd.Minutes;
+                                    var seconds = timeToEnd.Seconds;
+
+                                    nextAppointmentMessage = $"Your session will end in {days} days, {hours} hours, {minutes} minutes, {seconds} seconds.";
+                                }
+                            }
+                        }
+                    }
+                }
+
+                private async Task StartSession()
+                {
+                    if (lastAppointment != null && DateTime.Now >= lastAppointment.StartTime)
+                    {
+                        lastAppointment.Status = "ongoing";
+                        DbContext.Update(lastAppointment);
+                        await DbContext.SaveChangesAsync();
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Success,
+                            Summary = "Session Started",
+                            Detail = "Your session is now active.",
+                            Duration = 4000
+                        });
+                        await LoadAppointmentDataAsync();
+                        StateHasChanged();
+                    }
+                }
+
+                private async Task EndSession()
+                {
+                    if (lastAppointment != null && DateTime.Now >= lastAppointment.StartTime)
+                    {
+                        lastAppointment.Status = "completed";
+                        DbContext.Update(lastAppointment);
+                        await DbContext.SaveChangesAsync();
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Success,
+                            Summary = "Session Ended",
+                            Detail = "Your session has been ended.",
+                            Duration = 4000
+                        });
+                        await LoadAppointmentDataAsync();
+                        StateHasChanged();
+                    }
+                }
+            }
+        </Authorized>
+        <NotAuthorized>
+            Please log in first
+        </NotAuthorized>
+    </AuthorizeView>
+  

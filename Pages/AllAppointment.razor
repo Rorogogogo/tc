@@ -3,8 +3,12 @@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Globalization
+@using Radzen
+@using System.Linq
+@using Radzen.Blazor
 
 @inject ApplicationDbContext DbContext
+@inject NotificationService NotificationService
 
 @attribute [Authorize(Roles = "Admin")]
 <h3>Appointment Management</h3>
@@ -13,12 +17,17 @@
 {
     <p>Loading...</p>
 }
-else if (!appointments.Any())
-{
-    <p>No appointments found.</p>
-}
+
 else
-{
+    {
+    @if (!appointments.Any(a => a.DeleteDate == null))
+        {
+        <p>No appointments found.</p>
+        }
+        else
+        {
+
+
     <table class="table">
         <thead>
             <tr>
@@ -28,14 +37,16 @@ else
                 <th>Start Time</th>
                 <th>End Time</th>
                 <th>Create Date</th>
+                <th>Status</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var appointment in appointments)
+            @foreach (var appointment in appointments.Where(a => a.DeleteDate == null))
             {
                 var user = users.FirstOrDefault(u => u.Id == appointment.UserId);
                 var activityType = activityTypes.FirstOrDefault(a => a.Id == appointment.ActivityTypeId);
-                var venue = venues.FirstOrDefault(a => a.Id == appointment.VenueId);
+                var venue = venues.FirstOrDefault(v => v.Id == appointment.VenueId);
                 <tr>
                     <td>@user?.UserName</td>
                     <td>@venue?.VenueName</td>
@@ -43,10 +54,172 @@ else
                     <td>@appointment.StartTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</td>
                     <td>@appointment.EndTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</td>
                     <td>@appointment.CreateDate.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</td>
+                    <td>@appointment.Status</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => EditAppointment(appointment)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => ConfirmDelete(appointment)">Delete</button>
+                    </td>
                 </tr>
-            }
+                }
         </tbody>
     </table>
+        }
+    @if (appointments.Any(a => a.DeleteDate != null))
+    {
+        <h4>Deleted Appointments</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Venue</th>
+                    <th>Activity Type</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Create Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var appointment in appointments.Where(a => a.DeleteDate != null))
+                {
+                    var user = users.FirstOrDefault(u => u.Id == appointment.UserId);
+                    var activityType = activityTypes.FirstOrDefault(a => a.Id == appointment.ActivityTypeId);
+                    var venue = venues.FirstOrDefault(v => v.Id == appointment.VenueId);
+                    <tr>
+                        <td>@user?.UserName</td>
+                        <td>@venue?.VenueName</td>
+                        <td>@activityType?.ActivityName</td>
+                        <td>@appointment.StartTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</td>
+                        <td>@appointment.EndTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</td>
+                        <td>@appointment.CreateDate.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</td>
+                        <td>
+                            @if (appointment.DeleteDate != null)
+                            {
+                                <span class="text-danger">Deleted</span>
+                            }
+                            else
+                            {
+                                <span>@appointment.Status</span>
+                            }
+                        </td>
+                        <td>
+                            <button class="btn btn-danger" @onclick="() => ConfirmDelete(appointment)">Delete Permanently</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@if (isEditModalVisible)
+{
+    <EditForm Model="editingAppointment" OnValidSubmit="HandleEditAppointment">
+        <DataAnnotationsValidator />
+        <div class="modal show d-block" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Appointment</h5>
+                        <button type="button" class="btn-close" @onclick="() => isEditModalVisible = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="User" class="form-label">User</label>
+                            <InputSelect id="User" class="form-control" @bind-Value="editingAppointment.UserId">
+                                @foreach (var user in users)
+                                {
+                                    <option value="@user.Id">@user.UserName</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label for="Venue" class="form-label">Venue</label>
+                            <InputSelect id="Venue" class="form-control" @bind-Value="editingAppointment.VenueId">
+                                @foreach (var venue in venues)
+                                {
+                                    <option value="@venue.Id">@venue.VenueName</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ActivityType" class="form-label">Activity Type</label>
+                            <InputSelect id="ActivityType" class="form-control" @bind-Value="editingAppointment.ActivityTypeId">
+                                @foreach (var activityType in activityTypes)
+                                {
+                                    <option value="@activityType.Id">@activityType.ActivityName</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label for="Date" class="form-label">Date</label>
+                            <RadzenDatePicker @bind-Value="editingAppointmentDate"
+                                              Style="width: 100%;"
+                                              DateFormat="yyyy-MM-dd"
+                                              ShowTime="false" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="StartTime" class="form-label">Start Time</label>
+                            <RadzenDatePicker @bind-Value="editingAppointmentStartTime"
+                                              DateFormat="HH:mm"
+                                              TimeOnly="true"
+                                              ShowTime="true"
+                                              ShowDate="false"
+                                              HourFormat="24"
+                                              Style="width: 100%;" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="EndTime" class="form-label">End Time</label>
+                            <RadzenDatePicker @bind-Value="editingAppointmentEndTime"
+                                              DateFormat="HH:mm"
+                                              TimeOnly="true"
+                                              ShowTime="true"
+                                              ShowDate="false"
+                                              HourFormat="24"
+                                              Style="width: 100%;" />
+                        </div>
+                        @if (validationErrors.Count > 0)
+                        {
+                            <div class="alert alert-danger">
+                                <ul>
+                                    @foreach (var error in validationErrors)
+                                    {
+                                        <li>@error</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="() => isEditModalVisible = false">Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@if (isDeleteModalVisible)
+{
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" @onclick="() => isDeleteModalVisible = false"></button>
+                </div>
+                <div class="modal-body">
+                    <p>@deleteMessage</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => isDeleteModalVisible = false">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="HandleDeleteAppointment">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -54,22 +227,109 @@ else
     private List<ApplicationUserEntity> users;
     private List<ActivityTypeEntity> activityTypes;
     private List<VenueEntity> venues;
+    private AppointmentEntity editingAppointment;
+    private bool isEditModalVisible = false;
+    private bool isDeleteModalVisible = false;
+    private AppointmentEntity deletingAppointment;
+    private List<string> validationErrors = new List<string>();
+    private string deleteMessage;
+
+    private DateTime editingAppointmentDate = DateTime.Today;
+    private DateTime editingAppointmentStartTime = DateTime.Today;
+    private DateTime editingAppointmentEndTime = DateTime.Today;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
         appointments = await DbContext.Appointments
-            .Where(a => a.DeleteDate == null)
+            .OrderBy(a => a.CreateDate)
             .ToListAsync();
 
-        users = await DbContext.Users
-            .ToListAsync();
+        users = await DbContext.Users.ToListAsync();
 
         activityTypes = await DbContext.ActivityTypes
+            .OrderBy(a => a.ActivityName)
             .ToListAsync();
 
         venues = await DbContext.Venues
+            .OrderBy(v => v.VenueName)
             .ToListAsync();
     }
 
-    // Other methods if needed...
+    private void EditAppointment(AppointmentEntity appointment)
+    {
+        editingAppointment = appointment;
+        editingAppointmentDate = appointment.StartTime.Date;
+        editingAppointmentStartTime = appointment.StartTime;
+        editingAppointmentEndTime = appointment.EndTime;
+        isEditModalVisible = true;
+    }
+
+    private async Task HandleEditAppointment()
+    {
+        validationErrors.Clear();
+
+        if (editingAppointmentEndTime < editingAppointmentStartTime)
+        {
+            validationErrors.Add("End time cannot be earlier than start time.");
+        }
+
+        var overlappingAppointment = appointments
+            .Where(a => a.VenueId == editingAppointment.VenueId && a.Id != editingAppointment.Id)
+            .Any(a => a.StartTime < editingAppointmentEndTime && a.EndTime > editingAppointmentStartTime);
+
+        if (overlappingAppointment)
+        {
+            validationErrors.Add("The selected time slot overlaps with another appointment.");
+        }
+
+        if (validationErrors.Count == 0)
+        {
+            editingAppointment.StartTime = editingAppointmentDate.Add(editingAppointmentStartTime.TimeOfDay);
+            editingAppointment.EndTime = editingAppointmentDate.Add(editingAppointmentEndTime.TimeOfDay);
+
+            DbContext.Update(editingAppointment);
+            await DbContext.SaveChangesAsync();
+            isEditModalVisible = false;
+            await LoadData();
+        }
+    }
+
+    private void ConfirmDelete(AppointmentEntity appointment)
+    {
+        deletingAppointment = appointment;
+
+        if (appointment.DeleteDate != null)
+        {
+            deleteMessage = "This appointment is already deleted. Do you want to delete it permanently?";
+        }
+        else
+        {
+            deleteMessage = "Are you sure you want to delete this appointment?";
+        }
+
+        isDeleteModalVisible = true;
+    }
+
+    private async Task HandleDeleteAppointment()
+    {
+        if (deletingAppointment.DeleteDate != null)
+        {
+            DbContext.Appointments.Remove(deletingAppointment);
+        }
+        else
+        {
+            deletingAppointment.DeleteDate = DateTime.UtcNow;
+            DbContext.Update(deletingAppointment);
+        }
+
+        await DbContext.SaveChangesAsync();
+        isDeleteModalVisible = false;
+        await LoadData();
+        NotificationService.Notify(NotificationSeverity.Success, "Appointment Deleted", "The appointment has been deleted successfully.");
+    }
 }

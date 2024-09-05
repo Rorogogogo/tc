@@ -10,5 +10,4 @@ public class ApplicationUserEntity : IdentityUser<Guid>
     public DateTime? EditDate { get; set; }
 
     public DateTime? DeleteDate { get; set; }
-
 }

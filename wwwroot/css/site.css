@@ -8,9 +8,15 @@ h1:focus {
     outline: none;
 }
 
+.modal-open {
+    overflow: hidden;
+}
+
 a, .btn-link {
     color: #0071c1;
 }
+
+
 
 .btn-primary {
     color: #fff;

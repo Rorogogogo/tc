@@ -4,12 +4,12 @@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Globalization
-
+@using Radzen
 @inject UserManager<ApplicationUserEntity> UserManager
-@inject RoleManager<IdentityRole<Guid>> RoleManager // Use IdentityRole<Guid>
+@inject RoleManager<IdentityRole<Guid>> RoleManager
 @inject ApplicationDbContext DbContext
 @inject NavigationManager Navigation
-
+@inject NotificationService NotificationService
 
 @attribute [Authorize(Roles = "Admin")]
 <h3>User Management</h3>
@@ -17,10 +17,6 @@
 @if (users == null)
 {
     <p>Loading...</p>
-}
-else if (!users.Any())
-{
-    <p>No users found.</p>
 }
 else
 {
@@ -32,11 +28,12 @@ else
                 <th>Email Confirmed</th>
                 <th>Role</th>
                 <th>Create Date</th>
+                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var user in users)
+            @foreach (var user in users.Where(u => u.DeleteDate == null))
             {
                 var role = userRoles.ContainsKey(user.Id.ToString()) ? userRoles[user.Id.ToString()] : "null";
                 <tr>
@@ -45,6 +42,7 @@ else
                     <td>@user.EmailConfirmed</td>
                     <td>@role</td>
                     <td>@user.CreateDate.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</td>
+                    <td>@(user.DeleteDate == null ? "Normal" : "Deleted")</td>
                     <td>
                         @if (role != "Admin")
                         {
@@ -56,6 +54,41 @@ else
             }
         </tbody>
     </table>
+
+    @if (users.Any(u => u.DeleteDate != null))
+    {
+        <h4>Deleted Users</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>UserName</th>
+                    <th>Email</th>
+                    <th>Email Confirmed</th>
+                    <th>Role</th>
+                    <th>Create Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in users.Where(u => u.DeleteDate != null))
+                {
+                    var role = userRoles.ContainsKey(user.Id.ToString()) ? userRoles[user.Id.ToString()] : "null";
+                    <tr>
+                        <td>@user.UserName</td>
+                        <td>@user.Email</td>
+                        <td>@user.EmailConfirmed</td>
+                        <td>@role</td>
+                        <td>@user.CreateDate.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</td>
+                        <td class="text-danger">Deleted</td>
+                        <td>
+                            <button class="btn btn-danger" @onclick="() => ConfirmDelete(user, true)">Delete Permanently</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 }
 
 @if (isEditModalVisible)
@@ -80,7 +113,12 @@ else
                         </div>
                         <div class="mb-3">
                             <label for="Role" class="form-label">Role</label>
-                            <InputText id="Role" class="form-control" @bind-Value="editingRole" />
+                            <InputSelect id="Role" class="form-control" @bind-Value="editingRole">
+                                @foreach (var role in roles)
+                                {
+                                    <option value="@role.Name">@role.Name</option>
+                                }
+                            </InputSelect>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -103,7 +141,7 @@ else
                     <button type="button" class="btn-close" @onclick="() => isDeleteModalVisible = false"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Are you sure you want to delete this user?</p>
+                    <p>@deleteMessage</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="() => isDeleteModalVisible = false">Cancel</button>
@@ -122,66 +160,129 @@ else
     private bool isEditModalVisible = false;
     private bool isDeleteModalVisible = false;
     private ApplicationUserEntity deletingUser;
+    private bool isPermanentDelete = false;
+    private string deleteMessage;
+    private List<IdentityRole<Guid>> roles;
+
 
     protected override async Task OnInitializedAsync()
     {
-        users = await DbContext.Users
-            .Where(u => u.DeleteDate == null)
-            .ToListAsync();
-
-        foreach (var user in users)
-        {
-            var roles = await UserManager.GetRolesAsync(user);
-            userRoles[user.Id.ToString()] = roles.FirstOrDefault() ?? "null";
-        }
+        await ReloadUsers();
+        roles = await RoleManager.Roles.OrderBy(r => r.Name).ToListAsync();
     }
 
     private void EditUser(ApplicationUserEntity user)
     {
         editingUser = user;
-        editingRole = userRoles[user.Id.ToString()];
+        editingRole = userRoles.ContainsKey(user.Id.ToString()) ? userRoles[user.Id.ToString()] : "null";
         isEditModalVisible = true;
     }
 
     private async Task HandleEditUser()
     {
-        var currentRole = userRoles[editingUser.Id.ToString()];
-        if (currentRole != editingRole)
+        try
         {
-            if (!string.IsNullOrEmpty(currentRole))
+            var currentRole = userRoles[editingUser.Id.ToString()];
+            if (currentRole != editingRole)
             {
-                await UserManager.RemoveFromRoleAsync(editingUser, currentRole);
+                if (!string.IsNullOrEmpty(currentRole))
+                {
+                    await UserManager.RemoveFromRoleAsync(editingUser, currentRole);
+                }
+                if (!string.IsNullOrEmpty(editingRole))
+                {
+                    await UserManager.AddToRoleAsync(editingUser, editingRole);
+                }
             }
-            if (!string.IsNullOrEmpty(editingRole))
+
+            DbContext.Update(editingUser);
+            await DbContext.SaveChangesAsync();
+
+            isEditModalVisible = false;
+
+            NotificationService.Notify(new NotificationMessage
             {
-                await UserManager.AddToRoleAsync(editingUser, editingRole);
-            }
+                Severity = NotificationSeverity.Success,
+                Summary = "User Updated",
+                Detail = "The user has been successfully updated.",
+                Duration = 4000
+            });
+
+            await ReloadUsers();
         }
-
-        DbContext.Update(editingUser);
-        await DbContext.SaveChangesAsync(); // Save changes to database
-
-        isEditModalVisible = false;
-        Navigation.NavigateTo("/user_management", forceLoad: true); // Reload the page to reflect changes
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Update Failed",
+                Detail = $"An error occurred while updating the user: {ex.Message}",
+                Duration = 4000
+            });
+        }
     }
 
-
-    private void ConfirmDelete(ApplicationUserEntity user)
+    private void ConfirmDelete(ApplicationUserEntity user, bool permanentDelete = false)
     {
         deletingUser = user;
+        isPermanentDelete = permanentDelete;
+        deleteMessage = isPermanentDelete ? "Are you sure you want to permanently delete this user?" : "Are you sure you want to delete this user?";
         isDeleteModalVisible = true;
     }
 
     private async Task HandleDeleteUser()
     {
-        deletingUser.DeleteDate = DateTime.UtcNow.AddHours(10); // Sydney time is UTC+10
+        try
+        {
+            if (isPermanentDelete)
+            {
+                DbContext.Users.Remove(deletingUser);
+            }
+            else
+            {
+                deletingUser.DeleteDate = DateTime.UtcNow.AddHours(10);
+                DbContext.Update(deletingUser);
+            }
 
-        // Update user details
-        DbContext.Update(deletingUser);
-        await DbContext.SaveChangesAsync(); // Save changes to database
+            await DbContext.SaveChangesAsync();
 
-        isDeleteModalVisible = false;
-        Navigation.NavigateTo("/user_management", forceLoad: true); // Reload the page to reflect changes
+            isDeleteModalVisible = false;
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "User Deleted",
+                Detail = isPermanentDelete ? "The user has been permanently deleted." : "The user has been deleted successfully.",
+                Duration = 4000
+            });
+
+            await ReloadUsers();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Deletion Failed",
+                Detail = $"An error occurred while deleting the user: {ex.Message}",
+                Duration = 4000
+            });
+        }
     }
 
+    private async Task ReloadUsers()
+    {
+        users = await DbContext.Users
+            .OrderBy(u => u.CreateDate)
+            .ToListAsync();
+
+        foreach (var user in users)
+        {
+            var roles = await UserManager.GetRolesAsync(user);
+            if (roles.Any())
+            {
+                userRoles[user.Id.ToString()] = roles.First();
+            }
+        }
+    }
 }

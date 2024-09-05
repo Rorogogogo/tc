@@ -2,18 +2,25 @@
 @using Radzen
 @using Radzen.Blazor
 @using tc.Data
+@using System.Security.Claims
 @using Microsoft.EntityFrameworkCore
 @inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
+@inject NotificationService NotificationService
 
-<div class="container mt-4">
+<div class="container mt-4" style="text-align: center;">
+    <button type="button" class="btn btn-primary mb-4" @onclick="HandleBookingClick">Book a Venue</button>
     <div class="row">
-        @foreach (var index in Enumerable.Range(1, 17))
+        @foreach (var venue in sortedVenues)
         {
-            <div class="col-md-4 mb-4">
-                <button type="button" class="btn btn-link" @onclick="() => ShowPopup(index)">
-                    <img src="images/tc.jpeg" alt="Tennis Court @index" class="img-thumbnail" />
+            <div class="col-md-4 mb-4" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                <button type="button" class="btn btn-link" @onclick="() => HandleVenueClick(venue)">
+                    <img src="images/tc.jpeg" alt="Venue @venue.VenueName" class="img-thumbnail" style="max-width: 100%; height: auto;" />
                 </button>
-                <div style="text-align:center">Tennis Court @index</div>
+                <div style="margin-top: 8px; font-size: 16px; color: #333;">
+                    @venue.VenueName
+                </div>
             </div>
         }
     </div>
@@ -21,28 +28,99 @@
 
 @if (showModal)
 {
-    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog" aria-labelledby="courtModalLabel" aria-hidden="true">
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog" aria-labelledby="venueModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content" style="width: 800px">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="courtModalLabel">Tennis Court Details</h5>
+                    <h5 class="modal-title" id="venueModalLabel">Venue Details</h5>
+
                     <button type="button" class="close" @onclick="HidePopup">
                         <span aria-hidden="true">&times;</span>
                     </button>
+
                 </div>
+
                 <div class="modal-body">
-                    <RadzenScheduler Data="@appointments" TItem="AppointmentEntity"
-                                     StartProperty="StartTime" EndProperty="EndTime"
+                    <RadzenScheduler Data="@currentVenueAppointments"
+                                     TItem="AppointmentEntity"
+                                     StartProperty="StartTime"
+                                     EndProperty="EndTime"
                                      TextProperty="Status"
                                      @bind-Selected="@selectedAppointment"
-                                     AppointmentRender="@OnAppointmentRender">
+                                     AppointmentRender="@OnAppointmentRender"
+                                     >
                         <RadzenDayView StartTime="new TimeSpan(1, 0, 0)" />
                         <RadzenWeekView StartTime="new TimeSpan(1, 0, 0)" HeaderFormat="ddd, MM/dd/yyyy" />
                         <RadzenMonthView />
                     </RadzenScheduler>
+
+
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary mt-2" style="width:95%; align-self: center" @onclick="HandleBookingClick">Book</button>
+
+                    <button type="button" class="btn btn-secondary" @onclick="HidePopup">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showBookingForm)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog" aria-labelledby="bookingModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bookingModalLabel">Book Venue</h5>
+                    <button type="button" class="close" @onclick="HideBookingForm">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <RadzenTemplateForm Data="@newBooking" TItem="AppointmentEntity" Submit="@BookAppointment">
+                        <div class="form-group">
+                            <label for="bookingDate">Date:</label>
+                            <RadzenDatePicker @bind-Value="newBookingDate"
+                                              Style="width: 100%;"
+                                              DateFormat="yyyy-MM-dd"
+                                              ShowTime="false" />
+                        </div>
+                        <div class="form-group">
+                            <label for="startTime">Start Time:</label>
+                            <RadzenDatePicker @bind-Value="newBookingStartTime"
+                                              DateFormat="hh:mm tt"
+                                              TimeOnly="true"
+                                              ShowTime="true"
+                                              ShowDate="false"
+                                              HourFormat="24"
+                                              Style="width: 100%;" />
+                        </div>
+                        <div class="form-group">
+                            <label for="endTime">End Time:</label>
+                            <RadzenDatePicker @bind-Value="newBookingEndTime"
+                                              DateFormat="hh:mm tt"
+                                              HourFormat="24"
+                                              ShowTime="true"
+                                              ShowDate="false"
+                                              TimeOnly="true"
+                                              Style="width: 100%;" />
+                        </div>
+                        <div class="form-group">
+                            <label for="activityType">Activity Type:</label>
+                            <RadzenDropDown @bind-Value="newBooking.ActivityTypeId" Data="@activityTypes" TextProperty="ActivityName" ValueProperty="Id" Style="width: 100%;" />
+                        </div>
+                        <div class="form-group">
+                            <label for="venue">Venue:</label>
+                            <RadzenDropDown @bind-Value="newBooking.VenueId" Data="@sortedVenues" TextProperty="VenueName" ValueProperty="Id" Style="width: 100%;" />
+                        </div>
+                        <button type="submit" class="btn btn-success">Confirm Booking</button>
+                    </RadzenTemplateForm>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="HidePopup">Close</button>
+                    <button type="button" class="btn btn-secondary" @onclick="HideBookingForm">Close</button>
                 </div>
             </div>
         </div>
@@ -51,39 +129,213 @@
 
 @code {
     bool showModal = false;
-    int selectedCourtIndex;
+    bool showBookingForm = false;
+    VenueEntity selectedVenue;
     AppointmentEntity selectedAppointment;
+    DateTime newBookingDate = DateTime.Today;
+    DateTime newBookingStartTime = DateTime.Today;
+    DateTime newBookingEndTime = DateTime.Today;
+    AppointmentEntity newBooking = new AppointmentEntity();
     List<AppointmentEntity> appointments = new List<AppointmentEntity>();
+    List<ActivityTypeEntity> activityTypes = new List<ActivityTypeEntity>();
+    List<VenueEntity> venues = new List<VenueEntity>();
+    List<VenueEntity> sortedVenues = new List<VenueEntity>();
+    List<AppointmentEntity> currentVenueAppointments = new List<AppointmentEntity>();
+    Guid currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             appointments = await DbContext.Appointments.ToListAsync();
+            activityTypes = await DbContext.ActivityTypes.ToListAsync();
+            activityTypes = activityTypes
+            .OrderBy(at =>
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(at.ActivityName, @"\d+");
+                var letters = new string(at.ActivityName.Where(char.IsLetter).ToArray());
+                var number = match.Success ? int.Parse(match.Value) : 0;
+                return (letters, number);
+            })
+            .ToList();
+            venues = await DbContext.Venues.ToListAsync();
+
+            sortedVenues = venues
+                .OrderBy(v =>
+                {
+                    var match = System.Text.RegularExpressions.Regex.Match(v.VenueName, @"\d+");
+                    return match.Success ? int.Parse(match.Value) : 0;
+                })
+                .ToList();
+
+            foreach (var appointment in appointments)
+            {
+                if (appointment.EndTime < DateTime.Now)
+                {
+                    appointment.Status = "completed";
+                }
+            }
+
+            await DbContext.SaveChangesAsync();
+
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            string userIdString = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            Console.WriteLine($"Current User ID (string): {userIdString}");
+
+            if (!Guid.TryParse(userIdString, out currentUserId))
+            {
+                Console.WriteLine("Error: Invalid User ID format.");
+                return;
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading appointments: {ex.Message}");
+            Console.WriteLine($"Error loading data: {ex.Message}");
             throw;
         }
     }
 
-    void ShowPopup(int index)
+    async Task HandleBookingClick()
     {
-        selectedCourtIndex = index;
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (!user.Identity.IsAuthenticated)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "Login Required",
+                Detail = "Please log in first.",
+                Duration = 4000
+            });
+            return;
+        }
+
+        ShowBookingForm();
+    }
+
+    async Task HandleVenueClick(VenueEntity venue)
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (!user.Identity.IsAuthenticated)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "Login Required",
+                Detail = "Please log in first.",
+                Duration = 4000
+            });
+            return;
+        }
+
+        ShowPopup(venue);
+    }
+
+    void ShowPopup(VenueEntity venue)
+    {
+        selectedVenue = venue;
+        // Filter appointments by the selected venue
+        currentVenueAppointments = appointments.Where(a => a.VenueId == venue.Id).ToList();
         showModal = true;
+        JSRuntime.InvokeVoidAsync("toggleBodyScroll", true);
     }
 
     void HidePopup()
     {
         showModal = false;
+        JSRuntime.InvokeVoidAsync("toggleBodyScroll", false);
     }
+
+    void ShowBookingForm()
+    {
+        if (selectedAppointment != null)
+        {
+            newBookingDate = selectedAppointment.StartTime.Date;
+            newBookingStartTime = selectedAppointment.StartTime;
+            newBookingEndTime = selectedAppointment.EndTime;
+        }
+        showBookingForm = true;
+    }
+
+    void HideBookingForm()
+    {
+        showBookingForm = false;
+    }
+
+    async Task BookAppointment(AppointmentEntity booking)
+    {
+        // Combine the selected date with the selected start and end times
+        booking.StartTime = new DateTime(
+            newBookingDate.Year, newBookingDate.Month, newBookingDate.Day,
+            newBookingStartTime.Hour, newBookingStartTime.Minute, 0);
+
+        booking.EndTime = new DateTime(
+            newBookingDate.Year, newBookingDate.Month, newBookingDate.Day,
+            newBookingEndTime.Hour, newBookingEndTime.Minute, 0);
+
+        // Validate booking time
+        var overlappingAppointment = currentVenueAppointments.FirstOrDefault(a =>
+            a.VenueId == booking.VenueId &&
+            a.StartTime < booking.EndTime &&
+            booking.StartTime < a.EndTime);
+
+        if (overlappingAppointment != null)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "Booking Error",
+                Detail = $"The selected time overlaps with an existing booking at {overlappingAppointment.Venue.VenueName}.",
+                Duration = 4000
+            });
+            return;
+        }
+
+        booking.Id = Guid.NewGuid();
+        booking.UserId = currentUserId;
+        booking.Status = "reserved";
+
+        DbContext.Appointments.Add(booking);
+        await DbContext.SaveChangesAsync();
+
+        // Update current venue appointments
+        await OnInitializedAsync();
+
+
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Summary = "Booking Confirmed",
+            Detail = "Your booking has been successfully confirmed.",
+            Duration = 4000
+        });
+
+        HideBookingForm();
+        HidePopup();
+    }
+
 
     void OnAppointmentRender(SchedulerAppointmentRenderEventArgs<AppointmentEntity> args)
     {
-        if (args.Data.Status == "deleted")
+        switch (args.Data.Status)
         {
-            args.Attributes["style"] = "background-color: red;";
+            case "reserved":
+                args.Attributes["style"] = "background-color: #90EE90;"; // LightGreen
+                break;
+            case "completed":
+                args.Attributes["style"] = "background-color: #ADD8E6;"; // LightBlue
+                break;
+            case "ongoing":
+                args.Attributes["style"] = "background-color: #FFCCCB;"; // LightCoral
+                break;
+            default:
+                args.Attributes["style"] = "background-color: #D3D3D3;"; // LightGray
+                break;
         }
     }
 }

@@ -41,10 +41,12 @@
 
   <ItemGroup>
     <Content Remove="Pages\dashboard.razor" />
+    <Content Remove="wwwroot\js\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Data\DbEntities\" />
     <Folder Include="Data\Base\" />
     <Folder Include="Services\" />
+    <Folder Include="wwwroot\js\" />
   </ItemGroup>
 </Project>
